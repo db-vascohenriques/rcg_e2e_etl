@@ -44,12 +44,8 @@ create_schema_if_not_exists(f'{company}_{env}_data_engineering.bronze_erp')
 
 # COMMAND ----------
 
-pool = ThreadPool(4)
+pool = ThreadPool(9)
 confs = [c for c in tables_to_replicate if c['src_name'] in tables_in_source]
 r_raw = pool.map(lambda c: dbutils.notebook.run('./exec_ingest_bronze_erp', timeout_seconds=3600, arguments={"conf": json.dumps(c), "company": company, "env": env})
   , confs
 )
-
-# COMMAND ----------
-
-
