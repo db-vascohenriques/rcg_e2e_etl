@@ -62,8 +62,10 @@ for epoch in range(1, 20, 1):
 
     r_flat = []
     for r in r_raw:
-      r["epoch"] = epoch
-      r["concurrency"] = i
+      r_tmp = json.loads(r)
+      r_tmp["epoch"] = epoch
+      r_tmp["concurrency"] = i
+      r_flat.append(r_tmp)
 
     r_df = spark.createDataFrame(r_flat)
     write_df = (
