@@ -10,8 +10,8 @@ USE sales_facts;
 CREATE OR REPLACE TEMP VIEW bronze_erp_order_conformed AS
 WITH NESTED_LINE_ITEMS AS (
   SELECT SalesOrderID, collect_list(named_struct(
-    'line_item_id', SHA2(CONCAT('prod_erp_', CAST(SalesOrderDetailID AS STRING)),0),
-    'product_fk', SHA2(CONCAT('prod_erp_', CAST(ProductID AS STRING)),0),
+    'line_item_id', SHA2(CONCAT('{{env}}_erp_', CAST(SalesOrderDetailID AS STRING)),0),
+    'product_fk', SHA2(CONCAT('{{env}}_erp_', CAST(ProductID AS STRING)),0),
     'quantity', OrderQty,
     'unit_price', UnitPrice,
     'discount', UnitPriceDiscount
@@ -20,10 +20,10 @@ WITH NESTED_LINE_ITEMS AS (
   GROUP BY SalesOrderID
 )
 SELECT 
-  SHA2(CONCAT('prod_erp_', CAST(h.SalesOrderID AS STRING)), 0) AS `id`,
-  SHA2(CONCAT('prod_erp_', CAST(h.CustomerID AS STRING)),0) AS customer_fk,
-  SHA2(CONCAT('prod_erp_', CAST(h.ShipToAddressID AS STRING)),0) AS shto_address_fk,
-  SHA2(CONCAT('prod_erp_', CAST(h.BillToAddressID AS STRING)),0) AS blto_address_fk,
+  SHA2(CONCAT('{{env}}_erp_', CAST(h.SalesOrderID AS STRING)), 0) AS `id`,
+  SHA2(CONCAT('{{env}}_erp_', CAST(h.CustomerID AS STRING)),0) AS customer_fk,
+  SHA2(CONCAT('{{env}}_erp_', CAST(h.ShipToAddressID AS STRING)),0) AS shto_address_fk,
+  SHA2(CONCAT('{{env}}_erp_', CAST(h.BillToAddressID AS STRING)),0) AS blto_address_fk,
   DATE(h.OrderDate) AS order_date,
   li.line_items,
   h.Status AS order_status,
@@ -32,7 +32,7 @@ SELECT
   MAP('revision_number', h.RevisionNumber) AS _num_attrs,
   MAP('ship_date', h.ShipDate, 'due_date', h.DueDate) AS _date_attrs,
   MAP('sales_order_no',h.SalesOrderNumber,'purchase_order_no',h.PurchaseOrderNumber,'account_number',h.AccountNumber) AS _text_attrs,
-  'prod_erp' AS _source_id,
+  '{{env}}_erp' AS _source_id,
   h.ModifiedDate AS _source_modstamp,
   current_timestamp() AS _row_modstamp
 FROM bronze_erp.sales_order_header AS h

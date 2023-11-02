@@ -10,7 +10,7 @@ USE conformed_dims;
 -- coalesces the data into a format that is consistent with the schema of the products table.
 CREATE OR REPLACE TEMP VIEW bronze_erp_product_conformed AS
 SELECT 
-  SHA2(CONCAT('prod_erp_', CAST(p.ProductID AS STRING)), 0) AS `id`,
+  SHA2(CONCAT('{{env}}_erp_', CAST(p.ProductID AS STRING)), 0) AS `id`,
   p.ProductNumber AS sku,
   p.Name as name,
   p.ListPrice AS list_price,
@@ -21,7 +21,7 @@ SELECT
   MAP('cost', CAST(p.StandardCost AS DOUBLE), 'weight', p.Weight) AS _num_attrs,
   MAP('sell_start_ts', p.SellStartDate, 'sell_end_ts', p.SellEndDate, 'discontinued_ts', p.DiscontinuedDate) AS _date_attrs,
   MAP('color', p.Color, 'size', p.`Size`) AS _text_attrs,
-  'prod_erp' AS _source_id,
+  '{{env}}_erp' AS _source_id,
   p.ModifiedDate AS _source_modstamp,
   current_timestamp() AS _row_modstamp
 FROM bronze_erp.product AS p

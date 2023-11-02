@@ -10,7 +10,7 @@ USE conformed_dims;
 -- is consistent with the schema of the customers table.
 CREATE OR REPLACE TEMP VIEW bronze_erp_customer_conformed AS
 SELECT 
-  SHA2(CONCAT('prod_erp_', CAST(CustomerID AS STRING)), 0) AS `id`,
+  SHA2(CONCAT('{{env}}_erp_', CAST(CustomerID AS STRING)), 0) AS `id`,
   COALESCE(FirstName, '') || ' ' || COALESCE(MiddleName, '') || ' ' || COALESCE(LastName, ' ') AS name,
   EmailAddress AS email,
   Phone AS phone,
@@ -18,7 +18,7 @@ SELECT
   CAST(NULL AS MAP<string, double>) AS _num_attrs,
   CAST(NULL AS MAP<string, date>) AS _date_attrs,
   MAP('title', Title, 'suffix', Suffix, 'sales_person', SalesPerson) AS _text_attrs,
-  'prod_erp' AS _source_id,
+  '{{env}}_erp' AS _source_id,
   ModifiedDate AS _source_modstamp,
   current_timestamp() AS _row_modstamp
 FROM bronze_erp.customer;

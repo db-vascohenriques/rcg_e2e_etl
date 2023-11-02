@@ -10,7 +10,7 @@ USE conformed_dims;
 -- is consistent with the schema of the addresses table.
 CREATE OR REPLACE TEMP VIEW bronze_erp_address_conformed AS
 SELECT 
-  SHA2(CONCAT('prod_erp_', CAST(AddressID AS STRING)), 0) AS `id`,
+  SHA2(CONCAT('{{env}}_erp_', CAST(AddressID AS STRING)), 0) AS `id`,
   COALESCE(AddressLine1||'\n'||AddressLine2, AddressLine1) AS full_address,
   City as city,
   StateProvince AS state,
@@ -19,7 +19,7 @@ SELECT
   CAST(NULL AS MAP<string, double>) AS _num_attrs,
   CAST(NULL AS MAP<string, date>) AS _date_attrs,
   CAST(NULL AS MAP<string, string>) AS _text_attrs,
-  'prod_erp' AS _source_id,
+  '{{env}}_erp' AS _source_id,
   ModifiedDate AS _source_modstamp,
   current_timestamp() AS _row_modstamp
 FROM bronze_erp.address;

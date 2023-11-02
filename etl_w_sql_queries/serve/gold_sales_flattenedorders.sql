@@ -26,7 +26,7 @@ SELECT
   DATE(_date_attrs.ship_date) AS ship_date,
   DATE(_date_attrs.due_date) AS due_date
 FROM orders_expanded
-WHERE _source_id = 'prod_erp';
+WHERE _source_id = '{{env}}_erp';
 
 -- Join and remove unnecessary columns
 CREATE OR REPLACE TEMP VIEW orders_joined AS 

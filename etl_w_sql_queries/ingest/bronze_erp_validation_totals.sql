@@ -59,4 +59,4 @@ GROUP BY table_name ORDER BY table_name ASC;
 SELECT 
   CASE WHEN (REDUCE(COLLECT_LIST(totals_do_match), TRUE, (a, x) -> x and a))
   THEN 'SUCCESS' ELSE raise_error('Validation failed for counts in source v.s. bronze') END 
-FROM princes_prod_data_engineering.bronze_erp._val_totals;
+FROM princes_{{env}}_data_engineering.bronze_erp._val_totals;
