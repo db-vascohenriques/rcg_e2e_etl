@@ -44,11 +44,44 @@ create_schema_if_not_exists(f'{company}_{env}_data_engineering.bronze_erp')
 
 # COMMAND ----------
 
-pool = ThreadPool(4)
-confs = [c for c in tables_to_replicate if c['src_name'] in tables_in_source]
-r_raw = pool.map(lambda c: dbutils.notebook.run('./exec_ingest_bronze_erp', timeout_seconds=3600, arguments={"conf": json.dumps(c), "company": company, "env": env})
-  , confs
-)
+def clean_all_tables():
+  for i in [c['name'] for c in tables_to_replicate if c['src_name'] in tables_in_source]:
+    spark.sql(f"DELETE FROM {company}_{env}_data_engineering.bronze_erp.{i}")
+
+# COMMAND ----------
+
+bench_r = []
+for epoch in range(1, 20, 1):
+  for i in range(1, 11, 1):
+    print("Epoch:", epoch, "Test Concurrency:", i)
+    pool = ThreadPool(i)
+    confs = [c for c in tables_to_replicate if c['src_name'] in tables_in_source]
+    r_raw = pool.map(lambda c: dbutils.notebook.run('./exec_ingest_bronze_erp', timeout_seconds=3600, arguments={"conf": json.dumps(c), "company": company, "env": env})
+      , confs
+    )
+
+    r_flat = []
+    for r in r_raw:
+      r["epoch"] = epoch
+      r["concurrency"] = i
+
+    r_df = spark.createDataFrame(r_flat)
+    write_df = (
+      r_df
+      .select(
+        F.lit(run_id).alias('run_id'),
+        F.col('target'), F.col('concurrency'), F.col('epoch'),
+        (F.col('t_create')-F.col('t_start')).alias('create_time'),
+        (F.col('t_last_watermark')-F.col('t_create')).alias('last_watermark_time'),
+        (F.col('t_compute_incrementals')-F.col('t_last_watermark')).alias('compute_incrementals_time'),
+        (F.col('t_count_updates')-F.col('t_compute_incrementals')).alias('count_updates_time'),
+        (F.col('t_merge')-F.col('t_count_updates')).alias('merge_time'),
+        (F.col('t_merge')-F.col('t_start')).alias('total_time'),
+        F.current_timestamp().alias('row_insert_ts')
+      )
+    )
+    write_df.write.mode('append').saveAsTable('vh_catalog.benchmarks.rcg_e2e_etl_bronze_ingest')
+    clean_all_tables()
 
 # COMMAND ----------
 
