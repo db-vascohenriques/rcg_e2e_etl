@@ -1,7 +1,7 @@
 # Databricks notebook source
 import pyspark.sql.functions as F
 from multiprocessing.pool import ThreadPool
-import json, uuid
+import json
 
 # COMMAND ----------
 
@@ -10,7 +10,7 @@ dbutils.widgets.text('company', 'acme')
 
 # COMMAND ----------
 
-env, company, run_id = 'dev', 'acme', str(uuid.uuid4()).split('-')[0]
+env, company = 'dev', 'acme'
 if dbutils and hasattr(dbutils, 'widgets'):
   env = dbutils.widgets.get('env')
   company = dbutils.widgets.get('company')
