@@ -1,5 +1,6 @@
 # Databricks notebook source
 import pyspark.sql.functions as F
+from delta import DeltaTable
 
 # COMMAND ----------
 
@@ -22,7 +23,7 @@ spark.sql(f"USE sales_facts;")
 # COMMAND ----------
 
 bronze_df = spark.read.table('bronze_erp.sales_order_header')
-sod_df = spark.read.table('bronze_erp.product_category')
+sod_df = spark.read.table('bronze_erp.sales_order_detail')
 
 # COMMAND ----------
 
@@ -31,11 +32,11 @@ nli_df = (
   .groupBy('SalesOrderID')
   .agg(F.collect_list(
     F.struct(
-      F.sha2(F.concat(F.lit(f'{env}_erp'), F.col('SalesOrderDetailID').cast('string')), 0).alias(''),
-      F.sha2(F.concat(F.lit(f'{env}_erp'), F.col('ProductID').cast('string')), 0).alias(''),
-      F.col('quantity').alias('quantity'),
-      F.col('unit_price').alias('unit_price'),
-      F.col('discount').alias('discount')
+      F.sha2(F.concat(F.lit(f'{env}_erp'), F.col('SalesOrderDetailID').cast('string')), 0).alias('line_item_id'),
+      F.sha2(F.concat(F.lit(f'{env}_erp'), F.col('ProductID').cast('string')), 0).alias('product_fk'),
+      F.col('OrderQty').cast('double').alias('quantity'),
+      F.col('UnitPrice').cast('double').alias('unit_price'),
+      F.col('UnitPriceDiscount').cast('double').alias('discount')
     )
   ).alias('line_items'))
 )
@@ -46,7 +47,10 @@ conformed_df = (
   bronze_df.alias('h')
   .join(nli_df.alias('li'), on=[F.col('h.SalesOrderID') == F.col('li.SalesOrderID')])
   .select(
-    F.sha2(F.concat(F.lit(f'{env}_erp'), F.col('p.ProductID').cast('string')), 0).alias('id'),
+    F.sha2(F.concat(F.lit(f'{env}_erp'), F.col('h.SalesOrderID').cast('string')), 0).alias('id'),
+    F.sha2(F.concat(F.lit(f'{env}_erp'), F.col('h.CustomerID').cast('string')), 0).alias('customer_fk'),
+    F.sha2(F.concat(F.lit(f'{env}_erp'), F.col('h.ShipToAddressID').cast('string')), 0).alias('shto_address_fk'),
+    F.sha2(F.concat(F.lit(f'{env}_erp'), F.col('h.BillToAddressID').cast('string')), 0).alias('blto_address_fk'),
     F.col('h.OrderDate').cast('date').alias('order_date'),
     F.col('li.line_items').alias('line_items'),
     F.col('h.Status').alias('order_status'),

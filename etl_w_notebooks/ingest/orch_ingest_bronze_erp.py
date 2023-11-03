@@ -32,8 +32,8 @@ tables_to_replicate = [
   {"src_name":"productdescription", "name": "product_description", "watermark_column": "ModifiedDate", "merge_on": ["ProductDescriptionID"]},
   {"src_name":"productmodel", "name": "product_model", "watermark_column": "ModifiedDate", "merge_on": ["ProductModelID"]},
   {"src_name":"productmodelproductdescription", "name": "product_model_description", "watermark_column": "ModifiedDate", "merge_on": ["ProductModelID","ProductDescriptionID"]},
-  {"src_name":"salesorderdetail", "name": "salesorderdetail", "watermark_column": "ModifiedDate", "merge_on": ["SalesOrderId","SalesOrderDetailID"]},
-  {"src_name":"salesorderheader", "name": "salesorderheader", "watermark_column": "ModifiedDate", "merge_on": ["SalesOrderId"]}
+  {"src_name":"salesorderdetail", "name": "sales_order_detail", "watermark_column": "ModifiedDate", "merge_on": ["SalesOrderId","SalesOrderDetailID"]},
+  {"src_name":"salesorderheader", "name": "sales_order_header", "watermark_column": "ModifiedDate", "merge_on": ["SalesOrderId"]}
 ]
 
 # COMMAND ----------
