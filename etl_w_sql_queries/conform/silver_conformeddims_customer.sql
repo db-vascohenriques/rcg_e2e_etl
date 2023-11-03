@@ -11,7 +11,7 @@ USE conformed_dims;
 CREATE OR REPLACE TEMP VIEW bronze_erp_customer_conformed AS
 SELECT 
   SHA2(CONCAT('{{env}}_erp_', CAST(CustomerID AS STRING)), 0) AS `id`,
-  COALESCE(FirstName, '') || ' ' || COALESCE(MiddleName, '') || ' ' || COALESCE(LastName, ' ') AS name,
+  COALESCE(FirstName, '') || ' ' || COALESCE(MiddleName, '') || ' ' || COALESCE(LastName, '') AS name,
   EmailAddress AS email,
   Phone AS phone,
   CompanyName AS company,
