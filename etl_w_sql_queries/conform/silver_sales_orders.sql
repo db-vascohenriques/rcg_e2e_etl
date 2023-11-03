@@ -12,9 +12,9 @@ WITH NESTED_LINE_ITEMS AS (
   SELECT SalesOrderID, collect_list(named_struct(
     'line_item_id', SHA2(CONCAT('{{env}}_erp_', CAST(SalesOrderDetailID AS STRING)),0),
     'product_fk', SHA2(CONCAT('{{env}}_erp_', CAST(ProductID AS STRING)),0),
-    'quantity', OrderQty,
-    'unit_price', UnitPrice,
-    'discount', UnitPriceDiscount
+    'quantity', CAST(OrderQty AS DOUBLE),
+    'unit_price', CAST(UnitPrice AS DOUBLE),
+    'discount', CAST(UnitPriceDiscount AS DOUBLE)
   )) AS line_items
   FROM bronze_erp.sales_order_detail
   GROUP BY SalesOrderID
