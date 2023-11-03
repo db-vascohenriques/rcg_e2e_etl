@@ -1,30 +1,39 @@
 # Databricks notebook source
-import pyspark.sql.functions as F
-from delta import DeltaTable
+# MAGIC %md
+# MAGIC # Denormalise orders
+# MAGIC ## Gold layer
+# MAGIC This notebook joins all comformed dimensions with the orders silver table to produce a denormalised version of the data for reporting
 
 # COMMAND ----------
 
+# Import the necessary libraries for data transformation
+import pyspark.sql.functions as F
+
+# COMMAND ----------
+
+# Declare the parameters needed for this notebook
 dbutils.widgets.dropdown('env', 'dev',['dev', 'stg', 'uat', 'prod'])
 dbutils.widgets.text('company', 'acme')
 
 # COMMAND ----------
 
-env, company = 'dev', 'acme'
-if dbutils and hasattr(dbutils, 'widgets'):
-  env = dbutils.widgets.get('env')
-  company = dbutils.widgets.get('company')
+# MAGIC %run ../_setup
 
 # COMMAND ----------
 
+# Set the right execution context for writing to the CIM
 spark.sql(f"USE CATALOG {company}_{env}_business_intelligence;")
 spark.sql(f"USE common_information_model;")
 
 # COMMAND ----------
 
+# Read the orders fact from silver
 silver_df = spark.read.table(f'{company}_{env}_data_engineering.sales_facts.orders')
 
 # COMMAND ----------
 
+# Explode the line items column, such that each line item in 
+# the array becomes an individual row in the exploded_df
 orders_exploded_df = (
   silver_df
   .withColumn('line_item', F.explode(F.col('line_items')))
@@ -33,6 +42,7 @@ orders_exploded_df = (
 
 # COMMAND ----------
 
+# Expand each line item from a struct into its individual components
 orders_expanded_df = (
   orders_exploded_df
   .withColumn('product_fk', F.col('line_item.product_fk'))
@@ -44,6 +54,7 @@ orders_expanded_df = (
 
 # COMMAND ----------
 
+# Reorganise the orders dataframe to expose certain columns but not all
 orders_reorg = (
   orders_expanded_df
   .select(
@@ -59,6 +70,7 @@ orders_reorg = (
 
 # COMMAND ----------
 
+# Fetch conformed dimentions into individual dfs
 p_df  = spark.read.table(f'{company}_{env}_data_engineering.conformed_dims.products')
 c_df  = spark.read.table(f'{company}_{env}_data_engineering.conformed_dims.customers')
 sa_df = spark.read.table(f'{company}_{env}_data_engineering.conformed_dims.addresses')
@@ -66,6 +78,9 @@ ba_df = spark.read.table(f'{company}_{env}_data_engineering.conformed_dims.addre
 
 # COMMAND ----------
 
+# Perform the join and select the necessary columns. Choosing 
+# the necessary columns always comes down to what the business 
+# needs, so the BI team must make sure the deliver on the brief
 orders_joined = (
   orders_reorg.alias('o')
   .join(p_df.alias('p'),   on=[F.col('o.product_fk') == F.col('p.id')],       how='left')
@@ -94,4 +109,5 @@ orders_joined = (
 
 # COMMAND ----------
 
+# Write the joined result to the gold table
 orders_joined.write.mode('overwrite').saveAsTable('orders_flattened')

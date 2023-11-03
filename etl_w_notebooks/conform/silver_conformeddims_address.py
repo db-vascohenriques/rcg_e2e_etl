@@ -1,30 +1,43 @@
 # Databricks notebook source
+# MAGIC %md
+# MAGIC # Conform Addres dimension
+# MAGIC ## Silver layer
+# MAGIC This notebook unions all sources containing information about the address conformed dimension
+
+# COMMAND ----------
+
+# Import the necessary libraries for data transformation 
+# and writing to the silver layer
 import pyspark.sql.functions as F
 from delta import DeltaTable
 
 # COMMAND ----------
 
+# Declare the parameters needed for this notebook
 dbutils.widgets.dropdown('env', 'dev',['dev', 'stg', 'uat', 'prod'])
 dbutils.widgets.text('company', 'acme')
 
 # COMMAND ----------
 
-env, company = 'dev', 'acme'
-if dbutils and hasattr(dbutils, 'widgets'):
-  env = dbutils.widgets.get('env')
-  company = dbutils.widgets.get('company')
+# MAGIC %run ../_setup
 
 # COMMAND ----------
 
+# Set the right execution context for writing to the 
+# conformed dimensions schema
 spark.sql(f"USE CATALOG {company}_{env}_data_engineering;")
 spark.sql(f"USE conformed_dims;")
 
 # COMMAND ----------
 
+# Read the bronze addresses table from the erp schema
 bronze_df = spark.read.table('bronze_erp.address')
 
 # COMMAND ----------
 
+# Adapt the erp's schema to a conformed schema which could support
+# additional sources in the future. Remember the silver layer should
+# be source agnostic and use case agnostic
 conformed_df = (
   bronze_df
   .select(
@@ -45,15 +58,19 @@ conformed_df = (
 
 # COMMAND ----------
 
+# Declare the target addresses table to write to and create it
+# if it does not exist
 target_dt = DeltaTable.createIfNotExists(spark).tableName('conformed_dims.addresses').addColumns(conformed_df.schema).execute()
 
 # COMMAND ----------
 
+# Find the latest modstamp in the target for which data was upserted
 latest_modstamp = (
   target_dt.toDF().select(
     F.coalesce(F.max(F.col('_source_modstamp')),F.lit(0).cast('timestamp')).alias('watermark')
   ).take(1)[0].watermark
 )
+# Use the latest modstamp to filter only for new data
 conf_updates_df = (
   conformed_df
   .where(
@@ -63,6 +80,8 @@ conf_updates_df = (
 
 # COMMAND ----------
 
+# Merge the resulting updates df into the target customers table 
+# on the `id` column
 merge_result = target_dt.alias('target').merge(
   conf_updates_df.alias('source'),
   condition=f'target.`id` = source.`id`'

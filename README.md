@@ -21,15 +21,15 @@ To run this project, you'll need the following dependencies:
 
 Follow these steps to get started with this project:
 
-1. Clone this repository to your local machine:
+1. Set up your Databricks environment
+
+2. Clone this repository to your Databricks workspace:
 
 ```shell
 git clone <repository_url>
 ```
 
-2. Set up your Databricks environment
-
-3. Configure your connection to the SQL Database with the 'adventureworks' model.
+3. Configure your connection to the SQL Database with the 'adventureworks' model, you can use the Databricks Catalog Explorer to do so
 
 4. Explore the following components of this project:
 
@@ -45,4 +45,4 @@ This project is licensed under the Apache 2.0 License. See the [LICENSE](LICENSE
 
 ## Contact
 
-If you have any questions or need further assistance, please contact vasco.henriques@databricks.com
+If you have any questions or need further assistance, please contact your Databricks representative
