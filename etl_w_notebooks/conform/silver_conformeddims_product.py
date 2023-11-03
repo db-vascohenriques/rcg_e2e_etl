@@ -58,6 +58,7 @@ conformed_df = (
     F.col('pc.Name').alias('category_name'),
     F.col('ppc.Name').alias('parent_category_name'),
     F.col('pm.Name').alias('model_name'),
+    F.col('pmd.descriptions').alias('model_descriptions'), 
     F.create_map(
       F.lit('cost'), F.col('p.StandardCost').cast('double'),
       F.lit('weight'), F.col('p.Weight')
